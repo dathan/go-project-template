@@ -42,12 +42,11 @@ docker-build:
 				docker build  \
 					--build-arg GITHUB_SSH_PRIV_KEY="`cat ~/.ssh/id_rsa`" \
 					-t $(or ${dockerImage},$(BINARY_NAME)-release) .
-				docker tag `docker image ls --filter 'reference=$(BINARY_NAME)-release' -q` $(REPO):`git rev-parse HEAD`
-
+				docker tag `docker image ls --filter 'reference=$(BINARY_NAME)-release' -q` $(REPO)/$(BINARY_NAME)
 # Push the container
 .PHONY: docker-push
 docker-push: docker-build
-				docker push $(REPO):`git rev-parse HEAD`
+				docker push $(REPO)/$(BINARY_NAME):`git rev-parse HEAD`
 
 
 .PHONY: docker-clean

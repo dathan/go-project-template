@@ -59,7 +59,7 @@ jobs:
         run: make docker-build
 
       - name: Log into registry
-        run: echo "${{ secrets.DOCKER_HUB_PASSWORD }}" |docker login --username dathanvp --password-stdin hub.docker.com
+        run: echo "${{ secrets.DOCKER_HUB_PASSWORD }}" |docker login --username dathanvp --password-stdin index.docker.io
 
       - name: Push image
         run: |

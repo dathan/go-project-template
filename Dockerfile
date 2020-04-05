@@ -20,7 +20,6 @@ FROM golang:1.14-alpine3.11 AS baseGo
 
   ENV CGO_ENABLED 0
   RUN apk --no-cache add git bzr mercurial make
-  RUN pwd && ls -ltar 
   ENV GO111MODULE on
   RUN go version
   RUN make build

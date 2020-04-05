@@ -10,6 +10,9 @@ Build a template repository to get to coding as quickly as possible, by starting
 * Generic docker push
 
 ## TODO
-* Brew generic install
+* Brew generic install [DONE]
 * GITHUB Actions build and push to dockerhub [DONE]
 * Production Builds with git tag
+
+## Installing via brew
+* `brew install --verbose --build-from-source brew/Formula/go-project-template.rb`

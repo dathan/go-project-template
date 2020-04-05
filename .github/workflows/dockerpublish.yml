@@ -34,7 +34,7 @@ jobs:
 
       - name: Run tests
         run: |
-          make docker-build
+          make all
 
   # Push image to GitHub Packages.
   # See also https://docs.docker.com/docker-hub/builds/
@@ -63,7 +63,7 @@ jobs:
 
       - name: Push image
         run: |
-          IMAGE_ID=hub.docker.com/${{ github.repository }}/$IMAGE_NAME
+          IMAGE_ID=${{ github.repository }}/$IMAGE_NAME
           
           # Change all uppercase to lowercase
           IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
@@ -80,5 +80,4 @@ jobs:
           echo IMAGE_ID=$IMAGE_ID
           echo VERSION=$VERSION
 
-          docker tag image $IMAGE_ID:$VERSION
-          docker push $IMAGE_ID:$VERSION
+          make docker-push

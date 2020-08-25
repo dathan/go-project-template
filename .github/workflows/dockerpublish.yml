@@ -1,4 +1,4 @@
-name: Docker
+name: Publish Docker container
 
 on:
   push:
@@ -13,68 +13,20 @@ on:
   # Run tests for any PRs.
   pull_request:
 
-env:
-  # TODO: Change variable to your image's name.
-  IMAGE_NAME: example
-
 jobs:
-  # Run tests.
-  # See also https://docs.docker.com/docker-hub/builds/automated-testing/
-  test:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: shimataro/ssh-key-action@v2.0.1
-        with:
-          key: ${{ secrets.SSH_PRIV_KEY }}
-          known_hosts: ${{ secrets.KNOWN_HOSTS }}
-          name: id_rsa # optional
-
-      - uses: actions/checkout@v2
-
-      - name: Verify Builds Work
-        run: |
-          make docker-build
-
   # Push image to GitHub Packages.
   # See also https://docs.docker.com/docker-hub/builds/
   push:
-    # Ensure test job passes before pushing image.
-    needs: test
-
-
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
 
     steps:
-      - uses: shimataro/ssh-key-action@v2.0.1
-        with:
-          key: ${{ secrets.SSH_PRIV_KEY }}
-          known_hosts: ${{ secrets.KNOWN_HOSTS }}
-          name: id_rsa # optional
-
+      
       - uses: actions/checkout@v2
 
       - name: Log into registry
-        run: echo "${{ secrets.DOCKER_HUB_PASSWORD }}" |docker login --username dathanvp --password-stdin
+        #note by default GITHUB_TOKEN is already set in your repo to push to the registry by default for github
+        run: echo "${{ secrets.GITHUB_TOKEN }}" |docker login docker.pkg.github.com --username ${{github.actor}} --password-stdin
 
-      - name: Push image
-        run: |
-          IMAGE_ID=${{ github.repository }}/$IMAGE_NAME
-          
-          # Change all uppercase to lowercase
-          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
-
-          # Strip git ref prefix from version
-          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
-
-          # Strip "v" prefix from tag name
-          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
-
-          # Use Docker `latest` tag convention
-          [ "$VERSION" == "master" ] && VERSION=latest
-
-          echo IMAGE_ID=$IMAGE_ID
-          echo VERSION=$VERSION
-
-          make docker-push
+      - name: Build, Tag, Push
+        run: make docker-push

@@ -53,5 +53,4 @@ jobs:
 
       - name: Publish Build
         run: make docker-push
-        needs: build
 

@@ -35,7 +35,7 @@ jobs:
 
   publish:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
+    if: startsWith(github.ref, 'refs/tags/v')
 
     steps:
       #needed to access private repos with ssh
@@ -51,9 +51,7 @@ jobs:
         #note the registry doesn't allow github_token a PAT is needed. So, you will need to create that post install
         run: echo "${{ secrets.GITHUB_TOKEN }}" |docker login docker.pkg.github.com --username publisher --password-stdin
 
-      - name: Build Container
-        run: make docker-build
-
       - name: Publish Build
         run: make docker-push
+        needs: build
 

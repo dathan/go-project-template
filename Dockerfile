@@ -1,6 +1,6 @@
 # this is a multi-stage build
 # the 1st FROM builds the application
-FROM golang:1.14-alpine3.11 AS baseGo
+FROM golang:1.16.3-alpine3.13 AS baseGo
   LABEL stage=build
   ARG GITHUB_SSH_PRIV_KEY
   RUN test -n "$GITHUB_SSH_PRIV_KEY"
@@ -19,7 +19,7 @@ FROM golang:1.14-alpine3.11 AS baseGo
   WORKDIR /root/gocode
 
   ENV CGO_ENABLED 0
-  RUN apk --no-cache add git bzr mercurial make
+  RUN apk --no-cache add git make
   ENV GO111MODULE on
   RUN go version
   RUN make build

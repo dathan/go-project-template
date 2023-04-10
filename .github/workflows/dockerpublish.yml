@@ -22,11 +22,11 @@ jobs:
 
     steps:
       #needed to access private repos with ssh
-      - uses: shimataro/ssh-key-action@v2.0.1
-        with:
-          key: ${{ secrets.SSH_PRIV_KEY }}
-          known_hosts: ${{ secrets.KNOWN_HOSTS }}
-          name: id_rsa # optional
+      # - uses: shimataro/ssh-key-action@v2.0.1
+      #  with:
+      #    key: ${{ secrets.SSH_PRIV_KEY }}
+      #    known_hosts: ${{ secrets.KNOWN_HOSTS }}
+      #    name: id_rsa # optional
       
       - uses: actions/checkout@v2
 
@@ -39,11 +39,11 @@ jobs:
 
     steps:
       #needed to access private repos with ssh
-      - uses: shimataro/ssh-key-action@v2.0.1
-        with:
-          key: ${{ secrets.SSH_PRIV_KEY }}
-          known_hosts: ${{ secrets.KNOWN_HOSTS }}
-          name: id_rsa # optional
+      # - uses: shimataro/ssh-key-action@v2.0.1
+      #  with:
+      #    key: ${{ secrets.SSH_PRIV_KEY }}
+      #    known_hosts: ${{ secrets.KNOWN_HOSTS }}
+      #    name: id_rsa # optional
       
       - uses: actions/checkout@v2
 

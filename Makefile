@@ -1,5 +1,5 @@
 # Go parameters
-BINARY_NAME=license-check
+BINARY_NAME=go-project-template
 BINARY_UNIX=$(BINARY_NAME)_unix
 REPO=docker.pkg.github.com/dathan/go-project-template/go-project-template
 
@@ -39,9 +39,12 @@ build-linux:
 # Build docker containers
 .PHONY: docker-build
 docker-build:
-				docker build  \
-					--build-arg GITHUB_SSH_PRIV_KEY="`cat ~/.ssh/id_rsa`" \
+				# docker build  \
+				#	--build-arg GITHUB_SSH_PRIV_KEY="`cat ~/.ssh/id_rsa`" \
+				#	-t $(or ${dockerImage},$(BINARY_NAME)-release) .
+				docker build \
 					-t $(or ${dockerImage},$(BINARY_NAME)-release) .
+
 .PHONY: docker-tag
 docker-tag:
 			docker tag `docker image ls --filter 'reference=$(BINARY_NAME)-release' -q` $(REPO):`git rev-parse HEAD`

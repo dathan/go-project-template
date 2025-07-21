@@ -6,6 +6,8 @@ import (
 	"fmt"
 
 	"github.com/tmc/langchaingo/llms"
+	"github.com/tmc/langchaingo/llms/anthropic"
+	"github.com/tmc/langchaingo/llms/googleai"
 	"github.com/tmc/langchaingo/llms/openai"
 )
 
@@ -25,7 +27,16 @@ func NewAgent(provider string) (*Agent, error) {
 		if err != nil {
 			return nil, err
 		}
-	// TODO: Add cases for other providers like Claude and Gemini.
+	case "claude":
+		llm, err = anthropic.New()
+		if err != nil {
+			return nil, err
+		}
+	case "gemini":
+		llm, err = googleai.New()
+		if err != nil {
+			return nil, err
+		}
 	default:
 		return nil, fmt.Errorf("unsupported provider: %s", provider)
 	}

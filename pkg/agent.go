@@ -21,6 +21,8 @@ func NewAgent(provider string) (*Agent, error) {
 	var llm llms.Model
 	var err error
 
+	ctx := context.Background()
+
 	switch provider {
 	case "openai":
 		llm, err = openai.New()
@@ -33,7 +35,7 @@ func NewAgent(provider string) (*Agent, error) {
 			return nil, err
 		}
 	case "gemini":
-		llm, err = googleai.New()
+		llm, err = googleai.New(ctx)
 		if err != nil {
 			return nil, err
 		}

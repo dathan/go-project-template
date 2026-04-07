@@ -22,11 +22,11 @@ COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 RUN make build-linux
 
 # ── Stage 3: CA certs ─────────────────────────────────────────────────────────
-FROM alpine:3.21 AS certs
+FROM alpine:3.23 AS certs
 RUN apk add -U --no-cache ca-certificates
 
 # ── Stage 4: Final image ───────────────────────────────────────────────────────
-FROM alpine:3.21 AS release
+FROM alpine:3.23 AS release
 LABEL org.opencontainers.image.source="https://github.com/dathan/go-project-template"
 
 COPY --from=certs      /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/

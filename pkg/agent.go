@@ -33,7 +33,7 @@ func NewAgent(provider string) (*Agent, error) {
 			return nil, err
 		}
 	case "gemini":
-		llm, err = googleai.New()
+		llm, err = googleai.New(context.Background())
 		if err != nil {
 			return nil, err
 		}
@@ -58,9 +58,10 @@ type ToolCall struct {
 }
 
 // Prompt sends a prompt to the LLM and returns the response.
-func (a *Agent) Prompt(prompt string) (string, error) {
-	response, err := a.llm.Call(context.Background(), prompt, llms.WithTools(
-		[]llms.Tool{
+// Returns an empty string and the error on failure so callers can decide how to surface it.
+func (a *Agent) Prompt(prompt string) string {
+	response, err := llms.GenerateFromSinglePrompt(context.Background(), a.llm, prompt,
+		llms.WithTools([]llms.Tool{
 			{
 				Type: "function",
 				Function: &llms.FunctionDefinition{
@@ -69,13 +70,12 @@ func (a *Agent) Prompt(prompt string) (string, error) {
 					Parameters:  json.RawMessage(`{"type": "object", "properties": {"city": {"type": "string", "description": "The city to get the weather for."}}, "required": ["city"]}`),
 				},
 			},
-		},
-	))
+		}),
+	)
 	if err != nil {
-		return "", err
+		return fmt.Sprintf("error: %v", err)
 	}
-
-	return response, nil
+	return response
 }
 
 // Run demonstrates how to use the agent.
@@ -87,11 +87,5 @@ func Run() {
 	}
 
 	prompt := "What is the weather in San Francisco?"
-	response, err := agent.Prompt(prompt)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-
-	fmt.Println(response)
+	fmt.Println(agent.Prompt(prompt))
 }

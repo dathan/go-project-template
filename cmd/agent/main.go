@@ -18,10 +18,5 @@ func main() {
 		log.Fatalf("Error creating agent: %v", err)
 	}
 
-	response, err := agent.Prompt(*prompt)
-	if err != nil {
-		log.Fatalf("Error getting response from agent: %v", err)
-	}
-
-	fmt.Println(response)
+	fmt.Println(agent.Prompt(*prompt))
 }

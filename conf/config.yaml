@@ -1,0 +1,41 @@
+server:
+  host: "0.0.0.0"
+  port: 8080
+
+database:
+  host: "127.0.0.1"        # override via DATABASE_HOST env var for prod
+  port: 5432
+  name: "app_db"
+  user: "postgres"
+  password: ""             # set via DATABASE_PASSWORD in .env
+  sslmode: "disable"       # set to "require" in prod
+
+auth:
+  jwt_secret: ""           # set via AUTH_JWT_SECRET in .env
+  session_duration: "24h"
+  oauth:
+    google:
+      client_id: ""        # set via AUTH_OAUTH_GOOGLE_CLIENT_ID in .env
+      client_secret: ""
+      redirect_url: "http://127.0.0.1:8080/auth/google/callback"
+    github:
+      client_id: ""
+      client_secret: ""
+      redirect_url: "http://127.0.0.1:8080/auth/github/callback"
+    slack:
+      client_id: ""
+      client_secret: ""
+      redirect_url: "http://127.0.0.1:8080/auth/slack/callback"
+    linkedin:
+      client_id: ""
+      client_secret: ""
+      redirect_url: "http://127.0.0.1:8080/auth/linkedin/callback"
+
+stripe:
+  secret_key: ""           # set via STRIPE_SECRET_KEY in .env
+  webhook_secret: ""       # set via STRIPE_WEBHOOK_SECRET in .env
+  publishable_key: ""      # set via STRIPE_PUBLISHABLE_KEY in .env
+
+agent:
+  provider: "claude"       # openai | claude | gemini
+  model: "claude-opus-4-6"

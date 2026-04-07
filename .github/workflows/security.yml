@@ -1,0 +1,104 @@
+name: Security
+
+on:
+  # Fires when a GitHub Security Advisory is published for this repo
+  # (includes privately reported vulnerabilities once triaged).
+  repository_vulnerability_alert:
+    types: [create]
+
+  # Fires when Dependabot opens or updates a PR.
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write        # needed to merge Dependabot PRs
+  issues: write          # needed to open issues
+  pull-requests: write   # needed to approve / merge PRs
+
+jobs:
+  # ── Open a tracking issue when a new vulnerability alert is created ──────────
+  open-security-issue:
+    if: github.event_name == 'repository_vulnerability_alert'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create tracking issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const alert = context.payload.alert;
+            const pkg   = alert.affected_package_name || 'unknown package';
+            const sev   = alert.severity              || 'unknown severity';
+            const url   = alert.html_url              || '';
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              title: `[Security] Vulnerability in ${pkg} (${sev})`,
+              body: [
+                `## Vulnerability Alert`,
+                ``,
+                `**Package:** ${pkg}`,
+                `**Severity:** ${sev}`,
+                `**Advisory:** ${url}`,
+                ``,
+                `Dependabot will open a pull request to patch this dependency automatically.`,
+                `This issue will be closed once the fix is merged.`,
+              ].join('\n'),
+              labels: ['security', 'dependencies'],
+              assignees: ['dathan'],
+            });
+
+      - name: Notify via GitHub (assign + watch already triggers email)
+        run: echo "Issue created — GitHub will notify assigned users via email/web."
+
+  # ── Auto-merge Dependabot PRs that pass CI ───────────────────────────────────
+  auto-merge-dependabot:
+    if: |
+      github.event_name == 'pull_request' &&
+      github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Dependabot metadata
+        id: meta
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Approve the PR
+        run: gh pr review --approve "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enable auto-merge (squash)
+        # Auto-merge triggers once all required status checks pass.
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Notify owner of Dependabot PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr   = context.payload.pull_request;
+            const meta = {
+              name:    '${{ steps.meta.outputs.dependency-names }}',
+              from:    '${{ steps.meta.outputs.previous-version }}',
+              to:      '${{ steps.meta.outputs.new-version }}',
+              type:    '${{ steps.meta.outputs.update-type }}',
+            };
+            await github.rest.issues.createComment({
+              owner:      context.repo.owner,
+              repo:       context.repo.repo,
+              issue_number: pr.number,
+              body: [
+                `@dathan — Dependabot opened this PR:`,
+                ``,
+                `| | |`,
+                `|---|---|`,
+                `| **Package** | ${meta.name} |`,
+                `| **Update** | ${meta.from} → ${meta.to} (${meta.type}) |`,
+                `| **Status** | Auto-merge enabled — will merge once CI passes |`,
+              ].join('\n'),
+            });

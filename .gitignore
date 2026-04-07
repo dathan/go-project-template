@@ -19,6 +19,6 @@
 # Project Dependencies
 vendor
 
-# Ignore api dir
-api
-bin
+# Ignore top-level api and bin dirs (root-anchored so frontend/src/api/ is not affected)
+/api
+/bin

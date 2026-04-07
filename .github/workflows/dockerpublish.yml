@@ -19,6 +19,10 @@ env:
   username: ${{ github.actor }}  # This is your GitHub username automatically
   password: ${{ secrets.GITHUB_TOKEN }} # No setup required!
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
 
   build_and_publish:

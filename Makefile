@@ -1,6 +1,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # Go Project Template — Makefile
 # Usage: make setup              (first time — auto-detects name from directory)
+#        make dev                (build + run Go server + Vite, Ctrl-C to stop)
 #        make build / test / run / docker-build
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -22,7 +23,7 @@ REPO          ?= ghcr.io/$(GIT_OWNER)/$(PROJECT_NAME)
 GIT_SHA       := $(shell git rev-parse --short HEAD 2>/dev/null || echo "dev")
 
 .DEFAULT_GOAL := all
-.PHONY: all lint build build-linux run run-server run-tui test test-unit \
+.PHONY: all lint build build-linux run dev dev-stop dev-restart run-server run-tui test test-unit \
         test-integration migrate-up migrate-down migrate-create \
         frontend-install frontend-build frontend-dev \
         docker-build docker-tag docker-push docker-clean \
@@ -89,6 +90,64 @@ build-linux:
 
 # ── Run ───────────────────────────────────────────────────────────────────────
 run: run-server
+
+# dev: build the Go server, start it in the background, then start the Vite
+# dev server in the foreground. Ctrl-C kills both via the EXIT trap.
+# The Go server is ready when it logs "server starting"; we poll /healthz
+# so the frontend doesn't proxy to a port that isn't listening yet.
+dev-start: build
+	@echo "==> Starting Postgres, Go server + Vite dev server (Ctrl-C to stop all)"
+	@docker rm -f dev-postgres 2>/dev/null || true
+	@docker run -d --name dev-postgres \
+		-e POSTGRES_HOST_AUTH_METHOD=trust \
+		-p 5432:5432 \
+		postgres:latest
+	@trap 'echo; echo "==> Stopping..."; kill $$(cat /tmp/.dev-server.pid) 2>/dev/null; docker rm -f dev-postgres 2>/dev/null || true; exit 0' INT TERM EXIT; \
+	echo "  Waiting for Postgres on :5432..."; \
+	for i in $$(seq 1 40); do \
+		docker exec dev-postgres pg_isready -q 2>/dev/null && break; \
+		sleep 0.5; \
+	done; \
+	docker exec dev-postgres pg_isready -q 2>/dev/null \
+		|| (echo "ERROR: Postgres did not start"; docker rm -f dev-postgres 2>/dev/null; exit 1); \
+	./bin/$(SERVER_BINARY) & echo $$! > /tmp/.dev-server.pid; \
+	echo "  Waiting for Go server on :8080..."; \
+	for i in $$(seq 1 30); do \
+		curl -sf http://127.0.0.1:8080/healthz >/dev/null 2>&1 && break; \
+		sleep 0.5; \
+	done; \
+	curl -sf http://127.0.0.1:8080/healthz >/dev/null 2>&1 \
+		|| (echo "ERROR: Go server did not start"; kill $$(cat /tmp/.dev-server.pid) 2>/dev/null; docker rm -f dev-postgres 2>/dev/null; exit 1); \
+	echo "  Go server ready. Starting Vite at http://127.0.0.1:5173 ..."; \
+	cd frontend && npm run dev
+
+# dev-stop: kill the background Go server and tear down the Postgres container.
+# Safe to run even if nothing is running.
+dev-stop:
+	@echo "==> Stopping Go server..."
+	@kill $$(cat /tmp/.dev-server.pid 2>/dev/null) 2>/dev/null || true
+	@rm -f /tmp/.dev-server.pid
+	@pkill -x $(SERVER_BINARY) 2>/dev/null && echo "  Server stopped" || echo "  Server was not running"
+	@echo "==> Stopping Postgres..."
+	@docker rm -f dev-postgres 2>/dev/null && echo "  Postgres stopped" || echo "  Postgres was not running"
+
+# dev-restart: rebuild the Go server and hot-swap it without touching Postgres
+# or the Vite dev server. Run this in a second terminal while `make dev` is
+# running in the first.
+dev-restart: build
+	@echo "==> Restarting Go server..."
+	@kill $$(cat /tmp/.dev-server.pid 2>/dev/null) 2>/dev/null || true
+	@pkill -x $(SERVER_BINARY) 2>/dev/null || true
+	@rm -f /tmp/.dev-server.pid
+	@./bin/$(SERVER_BINARY) & echo $$! > /tmp/.dev-server.pid
+	@echo "  Waiting for Go server on :8080..."; \
+	for i in $$(seq 1 30); do \
+		curl -sf http://127.0.0.1:8080/healthz >/dev/null 2>&1 && break; \
+		sleep 0.5; \
+	done; \
+	curl -sf http://127.0.0.1:8080/healthz >/dev/null 2>&1 \
+		&& echo "  Go server ready (pid $$(cat /tmp/.dev-server.pid))" \
+		|| echo "ERROR: Go server did not start"
 
 run-server: build
 	./bin/$(SERVER_BINARY)

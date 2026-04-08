@@ -99,6 +99,8 @@ dev-start: build
 	@echo "==> Starting Postgres, Go server + Vite dev server (Ctrl-C to stop all)"
 	@docker rm -f dev-postgres 2>/dev/null || true
 	@docker run -d --name dev-postgres \
+		-e POSTGRES_USER=$${DATABASE_USER:-app_user} \
+		-e POSTGRES_DB=$${DATABASE_NAME:-app_db} \
 		-e POSTGRES_HOST_AUTH_METHOD=trust \
 		-p 5432:5432 \
 		postgres:latest
